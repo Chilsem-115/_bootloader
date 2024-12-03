@@ -1,0 +1,43 @@
+--------------------------- # BOOTLOADER # -------------------------
+[ ] Initializing in [16-bit] (Real) Mode
+    |_> Setting up the stack
+    |_> Disabling interrupts
+    |_> Clearing registers
+    |_> Setting stack pointer to 0x7C00
+
+[ ] Clearing the screen
+
+[ ] Displaying Boot Progress Message
+    |_> "Booting... Please wait."
+
+[ ] Loading the Kernel into Memory
+    |_> Loaded at address 0x1000
+
+[ ] Printing the Welcome Message
+
+; still under development currently
+#
+[ ] setting up the FAT12 file system for reading from the disk
+#
+
+[ ] Jumping to the Kernel
+
+[ ] Padding Bootloader to 519 Bytes
+    |_> Setting boot signature (dw 0xAA55)
+
+
+---------------------------------- # Switching to Protected Mode # ----------------------------
+[ ] GDT setup
+	|_> Setup GDT (declaring lgdt and giving it gdt_descriptor)
+
+[ ] Protection mode setup
+	|_> Setting up Protected mode
+		- By taking cr0 register, moving its value to eax to perform tasks
+		- changing the first bit of the eax into 1
+		- moving the eax value back to cr0 which enables protection
+	|_> Performing far jump and initializing protected mode
+
+[ ] Updating segment registers
+	|_>  setting the value of registers into 0x10 (16 in decimal)
+	|_>  setting the stack pointer to the address 0x9000 (esp not sp)
+	|_>	 Printing "A" to indicate that the
