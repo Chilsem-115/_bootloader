@@ -1,6 +1,6 @@
 [bits 16]
-org 0x1000
 
+section .text.stage2
 global _start		; Define _start as the entry point
 
 _start:
@@ -174,8 +174,8 @@ floppy_error:
 
 wait_key_and_reboot:
 	mov ah, 0
-	int 16h					; Wait for keypress
-	jmp 0FFFFh:0			; Reboot
+	int 0x16					; Wait for keypress
+	jmp 0x0FFFF:0			; Reboot
 
 msg_read_failed:
 	db 'Read from disk failed!', 0
