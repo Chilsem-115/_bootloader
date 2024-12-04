@@ -1,27 +1,50 @@
-BOOTLOADER_DIR = .
-BUILD_DIR = ../Build
-LINKER_SCRIPT = $(BOOTLOADER_DIR)/bootlinker.ld
+# Compiler and tools
+AS = nasm
+LD = ld
+QEMU = qemu-system-i386
 
-# Flags for NASM and linking
-NASM_FLAGS = -f elf32
-LD_FLAGS = -m elf_i386 -T $(LINKER_SCRIPT)
+# Source files
+BOOT_SRC = stage_01.asm   # Bootloader code
+KERNEL_SRC = stage_02.asm # Kernel code (if applicable)
 
-# Output filenames
-BOOTLOADER_BIN = $(BUILD_DIR)/bootloader.bin
+# Build directory
+BUILD_DIR = build
 
-# Targets
-all: $(BOOTLOADER_BIN)
+# Output files
+BOOT_BIN = $(BUILD_DIR)/boot.bin
+KERNEL_BIN = $(BUILD_DIR)/kernel.bin
+FLOPPY_IMG = $(BUILD_DIR)/floppy.img
+ISO = $(BUILD_DIR)/AscensionOS.iso
 
-$(BOOTLOADER_BIN): stage_01.asm stage_02.asm $(LINKER_SCRIPT)
-	@echo "Building Bootloader..."
-	# Assemble stage 1 and stage 2 into ELF object files
-	nasm $(NASM_FLAGS) stage_01.asm -o $(BUILD_DIR)/stage_01.o
-	nasm $(NASM_FLAGS) stage_02.asm -o $(BUILD_DIR)/stage_02.o
-	# Link both stages into a single binary using the linker script
-	ld $(LD_FLAGS) -o $(BOOTLOADER_BIN) $(BUILD_DIR)/stage_01.o $(BUILD_DIR)/stage_02.o
+# All target
+all: $(BUILD_DIR) $(FLOPPY_IMG)
 
+# Create the build directory if it doesn't exist
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+# Bootloader binary (16-bit)
+$(BOOT_BIN): $(BOOT_SRC) | $(BUILD_DIR)
+	$(AS) -f bin -o $@ $<  # Compile boot.asm to boot.bin in raw binary format
+
+# Kernel binary (32-bit) - Optional, you can adjust based on your setup
+$(KERNEL_BIN): $(KERNEL_SRC) | $(BUILD_DIR)
+	$(AS) -f bin -o $@ $<  # Compile kernel.asm to kernel.bin in raw binary format
+
+# Create the floppy image
+$(FLOPPY_IMG): $(BOOT_BIN) $(KERNEL_BIN)
+	dd if=/dev/zero of=$@ bs=512 count=2880  # Create empty floppy disk image
+	dd if=$(BOOT_BIN) of=$@ conv=notrunc  # Copy the bootloader into the image
+	dd if=$(KERNEL_BIN) of=$@ seek=1 conv=notrunc  # Copy the kernel into the image
+
+# Clean up generated files
 clean:
-	@echo "Cleaning bootloader..."
-	rm -rf $(BUILD_DIR)/*.o $(BOOTLOADER_BIN)
+	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean
+# Run the operating system in QEMU
+run: $(FLOPPY_IMG)
+	$(QEMU) -drive format=raw,file=$<
+
+# Create the ISO image (optional)
+$(ISO): $(FLOPPY_IMG)
+	genisoimage -o $@ -b $(FLOPPY_IMG) -no-emul-boot -boot-load-size 4 -boot-info-table

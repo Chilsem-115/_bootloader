@@ -1,14 +1,20 @@
+[org 0x8000]
 [bits 16]
 
-section .text.stage2
-global _start		; Define _start as the entry point
+%include "bootloader_defs.asm"
 
+Global _start		; Define _start as the entry point
 _start:
-	cli				; Disable interrupts
 
-	; Print "Bootloader stage 2 has been loaded successfully!" using BIOS interrupt
-	mov si, message		; Load address of the message
+mov ah, 0x0E
+mov al, 'A'
+int 0x10
+
+
+	mov si, msg_stage_02		; Load address of the message
 	call print_string
+
+
 
 	lgdt [gdt_descriptor]	; Load GDT
 
@@ -124,9 +130,6 @@ disk_read:
 	test di, di
 	jnz .retry
 
-	; All attempts exhausted, jump to error handling
-fail:
-	jmp floppy_error
 
 .done:
 	popa						; Restore registers
@@ -136,6 +139,10 @@ fail:
 	pop bx
 	pop ax						; Restore all registers
 	ret
+
+	; All attempts exhausted, jump to error handling
+fail:
+	jmp floppy_error
 
 disk_reset:
 	pusha
@@ -177,5 +184,5 @@ wait_key_and_reboot:
 	int 0x16					; Wait for keypress
 	jmp 0x0FFFF:0			; Reboot
 
-msg_read_failed:
-	db 'Read from disk failed!', 0
+msg_stage_02:		db 'Stage 2 has been initiated!', ENDL, 0
+msg_read_failed:	db 'Read from disk failed!', ENDL, 0
