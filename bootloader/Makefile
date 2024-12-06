@@ -45,7 +45,7 @@ always:
 # Clean
 #
 run: all
-	qemu-system-i386 -fda build/main_floppy.img
+	qemu-system-i386  -d int -M smm=off -fda build/main_floppy.img
 	
 clean:
 	rm -rf $(BUILD_DIR)/*

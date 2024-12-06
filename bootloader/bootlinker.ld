@@ -2,7 +2,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 0x0;  /* Start the kernel at this address */
+    . = 0x100000;  /* Start the kernel at this address */
 
 	.text :
     { *(.text) }

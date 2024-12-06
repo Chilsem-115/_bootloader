@@ -1,8 +1,6 @@
 [org 0x7C00]
 [bits 16]
 
-%define ENDL 0x0D, 0x0A
-
 ;
 ; FAT12 header
 ; 
@@ -15,6 +13,7 @@ nop
 ;
 
 start:
+	cli
     ; setup data segments
     mov ax, 0           ; can't set ds/es directly
     mov ds, ax
@@ -178,7 +177,6 @@ start:
 
     cli                                 ; disable interrupts, this way CPU can't get out of "halt" state
     hlt
-
 
 ;
 ; Error handlers
@@ -345,7 +343,7 @@ msg_kernel_not_found:   db 'KERNEL.BIN file not found!', ENDL, 0
 file_kernel_bin:        db 'STGTWO  BIN'
 kernel_cluster:         dw 0
 
-KERNEL_LOAD_SEGMENT     equ 0x2000
+KERNEL_LOAD_SEGMENT     equ 0x100000
 KERNEL_LOAD_OFFSET      equ 0
 
 
