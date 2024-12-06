@@ -1,188 +1,104 @@
-[org 0x8000]
+[org 0x0]
 [bits 16]
 
-%include "bootloader_defs.asm"
+mov [BOOT_DISK], dl               ; Store the boot disk number
 
-Global _start		; Define _start as the entry point
-_start:
+; Print the message in real mode using BIOS interrupt 0x10
+mov si, message                  ; Load the address of the message
+call print_string                ; Call the print function
 
-mov ah, 0x0E
-mov al, 'A'
-int 0x10
+; GDT initialization
+CODE_SEG equ GDT_code - GDT_start
+DATA_SEG equ GDT_data - GDT_start
 
+cli
+lgdt [GDT_descriptor] ; Load GDT descriptor
+mov eax, cr0
+or eax, 1             ; Set PE (Protection Enable) bit to enter protected mode
+mov cr0, eax
 
-	mov si, msg_stage_02		; Load address of the message
-	call print_string
+; Far jump format: jmp [segment selector], offset
+jmp CODE_SEG:start_protected_mode ; Jump to protected mode
 
+jmp hang               ; In case something goes wrong
 
-
-	lgdt [gdt_descriptor]	; Load GDT
-
-	; Enable protected mode
-	mov eax, cr0
-	or eax, 0x1			; Set PE (Protection Enable) bit in CR0
-	mov cr0, eax
-
-	; Far jump to enter protected mode and clear prefetch queue
-	jmp 0x08:protected_mode_start
-	
-; Function to print a null-terminated string using BIOS interrupt 0x10
-print_string:
-	mov al, [si]			; Load character from string
-	test al, al				; Check if it is the null terminator
-	jz print_done			; If null terminator, return
-	mov ah, 0x0E			; BIOS function to print a character
-	mov bh, 0x00			; Page number (0 for the default screen)
-	mov bl, 0x07			; Text attribute (light grey on black)
-	int 0x10				; Call BIOS interrupt to print the character
-	inc si					; Move to next character in string
-	jmp print_string		; Repeat until null terminator
-
-print_done:
-	ret
-
-; Message to print
-message db 'Bootloader stage 2 has been loaded successfully!', 0
-
-[bits 32]
-protected_mode_start:
-	; Update segment registers to use GDT
-	mov ax, 0x10			; Data segment selector in GDT (index 1)
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-	mov ss, ax				; Stack segment for the protected mode code
-
-	; Setup the stack for 32-bit mode
-	mov esp, 0x90000		; Set the stack pointer (example address)
-
-	; Load the kernel from disk (assuming it's at LBA 3 for example)
-	mov ax, 3				; LBA = 3 (Kernel starts here)
-	mov cl, 1				; Read 1 sector
-	mov bx, 0x10000			; Load the kernel at 0x10000
-	call disk_read
-
-	; Now jump to the kernel's entry point (assuming it's at 0x10000)
-	jmp 0x10000				; Jump to the kernel (entry point)
-
-	; Hang the system (infinite loop to halt the CPU)
 hang:
-	halt
-	jmp hang
+    halt
+    jmp hang
 
-; Global Descriptor Table (GDT)
-gdt_start:
-	; Null descriptor (index 0)
-	dq 0x0				; No base and limit
+; GDT initialization section
+GDT_start:
+    GDT_null:
+        dd 0x0
+        dd 0x0
 
-	; 32-bit Code Segment Descriptor (index 1)
-	dw 0xFFFF			; Segment limit (15:0)
-	dw 0x0000			; Base address (15:0)
-	db 0x00				; Base address (23:16)
-	db 10011010b		; Access byte: executable, readable, present
-	db 11001111b		; Flags: 4KB granularity, 32-bit
-	db 0x00				; Base address (31:24)
+    GDT_code:                 ; Code segment descriptor
+        dw 0xffff             ; Limit (16-bit max)
+        dw 0x0                ; Base address (start at 0)
+        db 0x0
+        db 0b10011010         ; Granularity, type, access byte (code segment)
+        db 0b11001111
+        db 0x0
 
-	; 32-bit Data Segment Descriptor (index 2)
-	dw 0xFFFF			; Segment limit (15:0)
-	dw 0x0000			; Base address (15:0)
-	db 0x00				; Base address (23:16)
-	db 10010010b		; Access byte: writable, present
-	db 11001111b		; Flags: 4KB granularity, 32-bit
-	db 0x00				; Base address (31:24)
+    GDT_data:                 ; Data segment descriptor
+        dw 0xffff             ; Limit (16-bit max)
+        dw 0x0                ; Base address (start at 0)
+        db 0x0
+        db 0b10010010         ; Granularity, type, access byte (data segment)
+        db 0b11001111
+        db 0x0
 
-gdt_end:
+GDT_end:
 
-; GDT descriptor
-gdt_descriptor:
-	dw gdt_end - gdt_start - 1	; Limit (size of GDT - 1)
-	dd gdt_start				; Address of GDT (base)
+GDT_descriptor:
+    dw GDT_end - GDT_start - 1  ; GDT size in bytes
+    dd GDT_start                ; Address of the GDT
 
-; Disk read routines
-disk_read:
-	push ax						; Save registers
-	push bx
-	push cx
-	push dx
-	push di
+[bits 32] ; Protected mode code
 
-	; LBA to CHS conversion
-	push cx						; Temporarily save CL (number of sectors)
-	call lba_to_chs				; Convert LBA to CHS
-	pop ax						; Restore CL (sectors to read)
+start_protected_mode:
+    ; Set up the segment registers for protected mode
+    mov ax, DATA_SEG
+    mov ds, ax                 ; Load data segment
+    mov ss, ax                 ; Load stack segment (same as data segment)
+    
+    ; Set up the code segment (CS) for 32-bit access
+    mov ax, CODE_SEG
+    mov cs, ax                 ; Load code segment (32-bit selector)
 
-	; Perform disk read using BIOS interrupt 0x13
-	mov ah, 0x02				; BIOS function to read sectors
-	mov di, 3					; Retry count
+    ; Now, we can safely write to VGA buffer at 0xb8000
+    ; Since DS is already set correctly, we use a 32-bit offset for accessing VGA memory
+    mov al, 'A'                ; Character to print
+    mov ah, 0x0F               ; Attribute (white on black)
+    
+    ; Set the offset to 0xb8000
+    lea di, [0xb8000]          ; Load the effective address (di = 0xb8000)
 
-.retry:
-	pusha						; Save all registers
-	stc							; Set carry flag
-	int 0x13						; Call BIOS interrupt 0x13 (disk read)
-	jnc .done					; Jump if carry is clear (successful)
+    ; Write to VGA memory at the offset
+    mov [di], ax               ; Write the character and attribute
 
-	; Read failed, retry
-	popa
-	call disk_reset
+    ; Infinite loop to keep the system running in protected mode
+    jmp $
 
-	dec di
-	test di, di
-	jnz .retry
+BOOT_DISK: db 0               ; Placeholder for the boot disk number
 
+times 510-($-$$) db 0         ; Fill the rest of the boot sector
+dw 0xaa55                    ; Boot signature
 
-.done:
-	popa						; Restore registers
-	pop di
-	pop dx
-	pop cx
-	pop bx
-	pop ax						; Restore all registers
-	ret
+; Real mode message to print before jumping to protected mode
+message db 'Stage 2 has been initiated successfully', 0
 
-	; All attempts exhausted, jump to error handling
-fail:
-	jmp floppy_error
+; Function to print a string using BIOS interrupt 0x10 (AH=0x0E)
+print_string:
+    mov ah, 0x0E         ; BIOS teletype output function
+    mov bh, 0x00         ; Page number (0)
+    
+print_char:
+    lodsb                ; Load byte at [DS:SI] into AL
+    or al, al            ; Check if it's the null terminator (end of string)
+    jz done              ; If it's zero, end the string
+    int 0x10             ; Call BIOS interrupt 0x10 (AH = 0x0E)
+    jmp print_char       ; Repeat for the next character
 
-disk_reset:
-	pusha
-	mov ah, 0
-	stc
-	int 0x13
-	jc floppy_error
-	popa
-	ret
-
-lba_to_chs:
-	push ax
-	push dx
-
-	; Convert LBA to CHS (Cylinder, Head, Sector)
-	xor dx, dx				; Clear dx
-	div word [bdb_sectors_per_track]	; Divide LBA by sectors per track
-	mov cx, dx				; CX = sector (LBA mod sectors per track)
-
-	xor dx, dx				; Clear dx again
-	div word [bdb_heads]		; Divide by the number of heads
-	mov dh, dl				; Head = remainder
-	mov ch, al				; Cylinder (lower 8 bits)
-	shl ah, 6
-	or cl, ah				; Cylinder (upper 2 bits in CL)
-
-	pop ax
-	mov dl, al				; Restore DL (drive number)
-	pop ax
-	ret
-
-floppy_error:
-	mov si, msg_read_failed
-	call print_string
-	jmp wait_key_and_reboot
-
-wait_key_and_reboot:
-	mov ah, 0
-	int 0x16					; Wait for keypress
-	jmp 0x0FFFF:0			; Reboot
-
-msg_stage_02:		db 'Stage 2 has been initiated!', ENDL, 0
-msg_read_failed:	db 'Read from disk failed!', ENDL, 0
+done:
+    ret

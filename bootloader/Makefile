@@ -1,57 +1,51 @@
-# Compiler and tools
-AS = nasm
-LD = ld
-QEMU = qemu-system-i386
-GENISOIMAGE = genisoimage
+ASM=nasm
+CC=gcc
 
-# Source files
-BOOT_SRC = stage_01.asm   # Bootloader code
-KERNEL_SRC = stage_02.asm # Kernel code (if applicable)
+TOOLS_DIR=tools
+BUILD_DIR=build
 
-# Build directory
-BUILD_DIR = build
+.PHONY: all floppy_image kernel bootloader clean always tools_fat
 
-# Output files
-STAGE_01_BIN = $(BUILD_DIR)/stage_01.bin
-STAGE_02_BIN = $(BUILD_DIR)/stage_02.bin
-FLOPPY_IMG = $(BUILD_DIR)/floppy.img
-ISO = $(BUILD_DIR)/AscensionOS.iso
+all: floppy_image tools_fat
 
-# All target
-all: $(BUILD_DIR) $(STAGE_01_BIN) $(STAGE_02_BIN) $(FLOPPY_IMG)
+#
+# Floppy image
+#
+floppy_image: $(BUILD_DIR)/main_floppy.img
 
-# Create the build directory if it doesn't exist
-$(BUILD_DIR):
+$(BUILD_DIR)/main_floppy.img: bootloader kernel
+	dd if=/dev/zero of=$(BUILD_DIR)/main_floppy.img bs=512 count=2880
+	mkfs.fat -F 12 -n "NBOS" $(BUILD_DIR)/main_floppy.img
+	dd if=$(BUILD_DIR)/bootloader.bin of=$(BUILD_DIR)/main_floppy.img conv=notrunc
+	mcopy -i $(BUILD_DIR)/main_floppy.img $(BUILD_DIR)/stgtwo.bin "::stgtwo.bin"  # Changed kernel name here
+
+#
+# Bootloader
+#
+bootloader: $(BUILD_DIR)/bootloader.bin
+
+$(BUILD_DIR)/bootloader.bin: always
+	$(ASM) stage_01.asm -f bin -o $(BUILD_DIR)/bootloader.bin
+
+#
+# Kernel
+#
+kernel: $(BUILD_DIR)/stgtwo.bin  # Changed to match new kernel name
+
+$(BUILD_DIR)/stgtwo.bin: always
+	$(ASM) stage_02.asm -f bin -o $(BUILD_DIR)/stgtwo.bin  # Changed output name to stgtwo.bin
+
+#
+# Always
+#
+always:
 	mkdir -p $(BUILD_DIR)
 
-# Bootloader binary (16-bit)
-$(STAGE_01_BIN): $(BOOT_SRC) | $(BUILD_DIR)
-	$(AS) -f bin -o $@ $<  # Compile boot.asm to boot.bin in raw binary format
-
-# Kernel binary (32-bit) - Optional, you can adjust based on your setup
-$(STAGE_02_BIN): $(KERNEL_SRC) | $(BUILD_DIR)
-	$(AS) -f bin -o $@ $<  # Compile kernel.asm to kernel.bin in raw binary format
-
-# Create the floppy image
-$(FLOPPY_IMG): $(STAGE_01_BIN) $(STAGE_02_BIN)
-	dd if=/dev/zero of=$@ bs=512 count=2880  # Create empty floppy disk image
-	dd if=$(STAGE_01_BIN) of=$@ conv=notrunc  # Copy the bootloader into the image
-	if [ -f $(STAGE_02_BIN) ]; then \
-		dd if=$(STAGE_02_BIN) of=$@ seek=1 conv=notrunc; \
-	fi
-
-# Clean up generated files
+#
+# Clean
+#
+run: all
+	qemu-system-i386 -fda build/main_floppy.img
+	
 clean:
-	rm -rf $(BUILD_DIR)
-
-# Run the operating system in QEMU
-run: $(FLOPPY_IMG)
-	$(QEMU) -drive format=raw,file=$<
-
-# Create the ISO image (optional)
-$(ISO): $(FLOPPY_IMG)
-	if command -v $(GENISOIMAGE) > /dev/null 2>&1; then \
-		$(GENISOIMAGE) -o $@ -b $(FLOPPY_IMG) -no-emul-boot -boot-load-size 4 -boot-info-table; \
-	else \
-		echo "genisoimage not found. Skipping ISO creation."; \
-	fi
+	rm -rf $(BUILD_DIR)/*

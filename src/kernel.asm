@@ -1,12 +1,13 @@
 [bits 32]
-global _start
+[global _start]
 
-_start:
+section .text
+kernel_start:
     ; Setup a basic stack for the kernel (just in case)
-    mov esp, 0x90000  ; Set the stack pointer
+    mov esp, 0x90000   ; Set the stack pointer (32-bit addressing)
 
     ; Print "Kernel is running!" at the top-left corner of the screen
-    mov si, message  ; Load the address of the message
+    mov si, message    ; Load the address of the message
     call print_string
 
     ; Halt the CPU (infinite loop)

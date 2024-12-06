@@ -1,4 +1,4 @@
-[bits 16]
+bits 16
 ; bootloader_defs.asm
 
 %define ENDL 0x0D, 0x0A
