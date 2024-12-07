@@ -30,16 +30,28 @@ protected_mode:
     mov gs, ax
     mov ss, ax
 
-    ; Write character 'A' to VGA memory in direct mode
-    mov edi, 0xb8000        ; VGA text mode memory address (start of video memory)
-    mov al, 'A'             ; ASCII value of 'A'
-    mov ah, 0x6            ; Attribute byte (white text on black background)
-    mov [edi], ax           ; Write the character and attribute to VGA memory
+; Write character 'B' to VGA memory in direct mode
+mov edi, 0xb8000        ; VGA text mode memory address (start of video memory)
+mov al, 'B'             ; ASCII value of 'B'
+mov ah, 0x6             ; Attribute byte (white text on black background)
+mov [edi], ax           ; Write the character and attribute to VGA memory
+
+; Write character 'A' to VGA memory in direct mode
+mov edi, 0xb8002        ; VGA text mode memory address (next character after 'B')
+mov al, 'A'             ; ASCII value of 'A'
+mov ah, 0x6             ; Attribute byte (white text on black background)
+mov [edi], ax           ; Write the character and attribute to VGA memory
+
+; Optional: Write character 'C' to the next position in VGA memory
+mov edi, 0xb8004        ; VGA text mode memory address (next character after 'A')
+mov al, 'C'             ; ASCII value of 'C'
+mov ah, 0x6             ; Attribute byte (white text on black background)
+mov [edi], ax           ; Write the character and attribute to VGA memory
 
     ; Hang the CPU
     cli
     hlt
-    jmp $
+	jmp $
 
 ; Global Descriptor Table
 gdt_start:
