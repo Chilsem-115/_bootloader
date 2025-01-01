@@ -1,4 +1,4 @@
-AS = nasm
+AS = fasm
 LD = ld
 QEMU = qemu-system-i386
 
@@ -17,10 +17,10 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(STAGE_01_BIN): $(BOOT_SRC) | $(BUILD_DIR)
-	$(AS) -f bin -o $@ $<
+	$(AS) $< $@
 
 $(STAGE_02_BIN): $(KERNEL_SRC) | $(BUILD_DIR)
-	$(AS) -f bin -o $@ $<
+	$(AS) $< $@
 
 $(FLOPPY_IMG): $(STAGE_01_BIN) $(STAGE_02_BIN) | $(BUILD_DIR)
 	dd if=/dev/zero of=$@ bs=512 count=2880

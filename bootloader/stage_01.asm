@@ -1,5 +1,4 @@
 org 0x7c00
-[bits 16]
 
 ; Set up the stack
 cli						; Disable interrupts

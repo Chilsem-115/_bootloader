@@ -18,7 +18,7 @@ print_vga:
     inc ebx                  ; Increment bx to move to the next character in msg
     jmp .loop               ; Repeat the loop
 
-.check
+.check:
 	inc ebx
 	mov al, [esi + ebx]
 	cmp al, 'r'
@@ -66,7 +66,7 @@ print_vga:
 	add edi, 2
 	jmp .blue
 
-.restore
+.restore:
 	mov ah, 0xF
 	inc ebx
 	mov al, [esi + ebx]

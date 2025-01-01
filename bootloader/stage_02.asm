@@ -1,5 +1,4 @@
-[org 0x8000]
-[bits 16]
+org 0x8000
 
 start:
 	; Disable interrupts
@@ -21,7 +20,7 @@ start:
 	; Far jump to protected mode
 	jmp	0x08:protected_mode
 
-[bits	32]
+use32
 protected_mode:
 	; Update segment registers
 	mov	ax,	0x10			; Data segment selector (from the GDT)
@@ -42,7 +41,7 @@ protected_mode:
 
 msg	db	"         The boot process was: %gsuccessful!% Welcome to %rAscensionOS!%",	0
 
-%include	"print_vga.asm"
+include	'print_vga.asm'
 
 ; Global Descriptor Table
 gdt_start:
@@ -51,6 +50,6 @@ gdt_start:
 	dq	0x00cf92000000ffff			; Data segment descriptor (for 32-bit mode)
 
 gdt_descriptor:
-	dw	gdt_end	-	gdt_start	-	1
+	dw	gdt_end	- gdt_start	- 1
 	dd	gdt_start
 gdt_end:
