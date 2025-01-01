@@ -11,16 +11,9 @@
     |_> "Booting... Please wait."
 
 [ ] Loading the Kernel into Memory
-    |_> Loaded at address 0x1000
+    |_> Loaded at address 0x8000
 
-[ ] Printing the Welcome Message
-
-; still under development currently
-#
-[ ] setting up the FAT12 file system for reading from the disk
-#
-
-[ ] Jumping to the Kernel
+[ ] Jumping to stage 2 of the bootloader
 
 [ ] Padding Bootloader to 519 Bytes
     |_> Setting boot signature (dw 0xAA55)
