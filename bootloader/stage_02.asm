@@ -39,7 +39,9 @@ protected_mode:
 	pushfd
 	pop eax
 	mov ecx, eax
-	xor eax, 0x200000 ; 1 << 21 = 0x200000
+
+	xor eax, 0x200000 ; 1 << 21
+
 	push eax
 	popfd
 	pushfd
@@ -47,21 +49,10 @@ protected_mode:
 	push ecx
 	popfd
 	xor eax, ecx
-	jz	error_64
-	jnz run_long_mode
-
+	jz	check_failed
+	jnz check_succeed
 
 	call halt
-
-run_long_mode:
-	mov esi, success_64_msg
-	call print_vga
-	ret
-
-error_64:
-	mov esi, error_64_msg
-	call	print_vga
-	call	halt
 
 ; halting the system and entering the infinite loop
 halt:
@@ -71,10 +62,8 @@ halt:
 
 
 msg	db	"The boot process was: %gsuccessful!% Welcome to %rAscensionOS!%  ", 0x0
-error_64_msg db "CPU does not support long mode, the switch to long mode has %rfailed%", 0x0
-success_64_msg db "%gCPU supports long mode%, initialization in proccess...", 0x0
 
-
+include 'long_mode.asm'
 include	'print_vga.asm'
 
 	
