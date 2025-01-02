@@ -30,26 +30,64 @@ protected_mode:
 	mov	gs,	ax
 	mov	ss,	ax
 
+	mov edi, 0xb8000 ; setup pointer to the direct VGA
+
 ; Write a string to VGA memory in direct mode
 	mov	esi, msg
 	call	print_vga
 
+	pushfd
+	pop eax
+	mov ecx, eax
+	xor eax, 0x200000 ; 1 << 21 = 0x200000
+	push eax
+	popfd
+	pushfd
+	pop eax
+	push ecx
+	popfd
+	xor eax, ecx
+	jz	error_64
+	jnz run_long_mode
+
+
+	call halt
+
+run_long_mode:
+	mov esi, success_64_msg
+	call print_vga
+	ret
+
+error_64:
+	mov esi, error_64_msg
+	call	print_vga
+	call	halt
+
 ; halting the system and entering the infinite loop
+halt:
 	cli
 	hlt
 	jmp	$
 
-msg	db	"         The boot process was: %gsuccessful!% Welcome to %rAscensionOS!%",	0
+
+msg	db	"The boot process was: %gsuccessful!% Welcome to %rAscensionOS!%  ", 0x0
+error_64_msg db "CPU does not support long mode, the switch to long mode has %rfailed%", 0x0
+success_64_msg db "%gCPU supports long mode%, initialization in proccess...", 0x0
+
 
 include	'print_vga.asm'
 
+	
 ; Global Descriptor Table
 gdt_start:
-	dq	0x0000000000000000			; Null descriptor
-	dq	0x00cf9a000000ffff			; Code segment descriptor (for 32-bit mode)
-	dq	0x00cf92000000ffff			; Data segment descriptor (for 32-bit mode)
+GDT_NULL:		dq	0x0							; Null descriptor
+GDT_BOOT_DS:	dq	0x00cf9a000000ffff			; Code segment descriptor (for 32-bit mode)
+GDT_BOOT_CS:	dq	0x00cf92000000ffff			; Data segment descriptor (for 32-bit mode)
+GDT_CS64:		dq	0x00209A0000000000			; Code segment descriptor (for 64 bit mode)
+GDT_DS64:		dq	0x0000920000000000			; Data segment descriptor (for 64 bit mode)
 
 gdt_descriptor:
 	dw	gdt_end	- gdt_start	- 1
 	dd	gdt_start
+
 gdt_end:

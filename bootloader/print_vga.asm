@@ -1,5 +1,4 @@
 print_vga:
-    mov edi, 0xb8000        ; VGA memory address for the first character
     mov ah, 0xF             ; Attribute byte
     push ebx
 	xor ebx, ebx
@@ -15,7 +14,7 @@ print_vga:
     mov [edi], eax           ; Write character (al) and attribute (ah) to VGA memory
     add edi, 2              ; Move to the next character space (2 bytes per character)
 
-    inc ebx                  ; Increment bx to move to the next character in msg
+    inc ebx                  ; Increment ebx to move to the next character in msg
     jmp .loop               ; Repeat the loop
 
 .check:
@@ -73,5 +72,11 @@ print_vga:
 	jmp .loop
 
 .done:
+	push eax
+	mov eax, 172
+	imul ebx, 2
+	sub eax, ebx
+	add edi, eax
+	pop eax
     pop ebx
     ret
