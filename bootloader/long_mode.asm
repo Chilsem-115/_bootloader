@@ -36,4 +36,4 @@ check_failed:
 success_64_msg	db "%gCPU supports long mode%, initialization in proccess...", 0x0
 error_64_msg	db "CPU does not support long mode, the switch to long mode has %rfailed%", 0x0
 no_longmode		db "Long mode is not supported in this machine", 0x0
-yes_longmode	db "Longmode is %gsupported% in this machine!"
+yes_longmode	db "Longmode is %gsupported% in this machine!", 0x0
