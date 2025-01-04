@@ -24,16 +24,20 @@ clear_screen:
 
 ; Load the stage 2 into memory
 	mov ah, 0x02			; BIOS disk read function (AH=0x02)
-	mov al, 1			; Number of sectors to read
-	mov ch, 0			; Cylinder (track) 0
-	mov cl, 2			; Sector 2 (where the kernel is stored)
-	mov dh, 0			; Head 0
+	mov al, 0x10			; Number of sectors to read
+	mov ch, 0x00			; Cylinder (track) 0
+	mov cl, 0x02			; Sector 2 (where the kernel is stored)
+	mov dh, 0x00			; Head 0
 	mov dl, 0x80			; Drive 0x80 (first hard drive)
 	mov bx, 0x8000			; Load the kernel into memory at address 0x1000
 	int 0x13				; Call BIOS interrupt to read the sector
+	jc error
 
 ; Jump to the kernel (loaded at 0x1000)
 	jmp 0x8000				; Jump to address 0x1000 where the kernel is loaded
+error:
+	hlt
+	jmp $
 
 ; Print routine
 times 510 - ($ - $$) db 0		; Pad the bootloader to 510 bytes

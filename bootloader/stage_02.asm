@@ -52,10 +52,10 @@ protected_mode:
 	jz	check_failed
 	jnz check_succeed
 
-	call halt
+	call hang
 
 ; halting the system and entering the infinite loop
-halt:
+hang:
 	cli
 	hlt
 	jmp	$

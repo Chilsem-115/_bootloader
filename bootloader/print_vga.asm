@@ -1,6 +1,6 @@
 print_vga:
     mov ah, 0xF             ; Attribute byte
-    push ebx
+	push ebx
 	xor ebx, ebx
 
 .loop:
