@@ -88,6 +88,7 @@ read_stage2_header:
 ;   [LOAD_OFS+0..3]  = 'ST2H'
 ;   [LOAD_OFS+4..7]  = ST2_TOTAL_SECT (u32)
 read_stage2_rest:
+
     push ds
     push si
     push ax

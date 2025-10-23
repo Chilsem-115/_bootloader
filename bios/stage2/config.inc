@@ -11,10 +11,6 @@ CODE_SEL            = 0x08
 DATA_SEL            = 0x10
 
 ; ---- strings ----
-banner			db 'Stage2: BIOS real-mode stub',0
-a20_msg			db 'A20: enabling...',0
-e820_msg		db 'E820: querying memory map...',0
-e820_success	db 'E820: Successful'
 
 ; ---- E820 bookkeeping ----
 E820_entry		rb 24

@@ -7,6 +7,7 @@ gdt_start:
     dq 0
     dq 0x00CF9A000000FFFF    ; 0x08: 32-bit code
     dq 0x00CF92000000FFFF    ; 0x10: 32-bit data
+
 gdt_end:
 
 gdt_desc:

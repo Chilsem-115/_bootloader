@@ -31,46 +31,22 @@ start:
     int  0x10
     xor  ax, ax          ; keep AL=0 so any stray teletype won’t print a glyph
 
-    ; ---- banner ----
-    mov  si, banner
-    PRINT_Z si
-    CRLF
-
-    mov  si, a20_msg
-    PRINT_Z si
-
-; ---- setup stack ----
+	; ---- setup stack ----
     mov ax, 0x7000
     mov ss, ax
     mov sp, 0xFFFE
 
-; ---- enable A20 ----
-
-    ;call enable_a20
-    jc   .a20_fail
-    PRINT_OK
-    CRLF
-    jmp  .a20_ok
-.a20_fail:
-    PRINT_FAIL
-    CRLF
-.a20_ok:
+	; ---- enable A20 ----
+	call enable_a20
+	jc	.hang_rm
 
     ; store DL before other calls (safest)
     mov  [boot_info+0], dl
 
     ; ---- E820 ----
-    mov  si, e820_msg
-    PRINT_Z si
-    CRLF
-
 
     call e820_query	
 	cld                       ; belt & suspenders
-
-	mov si, e820_success
-	PRINT_Z si
-	CRLF
 
     ; fill the rest
     call fill_bootinfo
