@@ -1,3 +1,4 @@
+
 ; ===== bios/stage2/stage2.asm =====
 format  binary
 use16
@@ -6,17 +7,15 @@ org     8000h                          ; Stage2 is loaded here by Stage1
 ; ---------------- Stage2 self-describing header (first 16 bytes) ------------
 ST2_HDR:
     db  'ST2H'                         ; magic
-ST2_TOTAL_BYTES dd  ST2_END - $$       ; exact assembler size
-ST2_TOTAL_SECT  dd  (ST2_TOTAL_BYTES+511)/512
-ST_ENTRY_OFS	dd	start - $$
-ST2_VERSION     dd  0x00010000         ; v1.0
+	ST2_TOTAL_BYTES dd  ST2_END - $$       ; exact assembler size
+	ST2_TOTAL_SECT  dd  (ST2_TOTAL_BYTES+511)/512
+	ST_ENTRY_OFS	dd	start - $$
+	ST2_VERSION     dd  0x00010000         ; v1.0
 
 ; ---------------- includes / config -----------------------------------------
 include 'config.inc'                   ; constants + print macros
 include 'a20.asm'
 include 'e820.asm'
-include 'pm32.asm'                     ; pm_switch + pm_entry32 proof print
-include 'print_vga.asm'
 
 ; ---------------- real-mode entry -------------------------------------------
 
@@ -65,3 +64,6 @@ start:
 
 ; ---------------- end-of-image marker for header size ------------------------
 ST2_END:
+
+include 'print_vga.asm'
+include 'pm32.asm'                     ; pm_switch + pm_entry32 proof print

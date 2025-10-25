@@ -59,19 +59,29 @@ pm_entry32:
     mov esp, PM_STACK_TOP
     cld
 
+    ; -------- print "PMOK" at row 0, col 0 in bright green --------
+    mov     dh, 0            ; row
+    mov     dl, 0            ; col
+    mov     bl, 0x0F         ; attribute (print_vga will change on %g/%r/%b)
+
     ; “PMOK” at top-left (VGA text buffer @ 0xB8000)
-    mov     edi, 0xB8000
-    mov     ax, 0x0F50          ; 'P' + attr
-    mov     word [edi],   ax
-    mov     ax, 0x0F4D          ; 'M'
-    mov     word [edi+2], ax
-    mov     ax, 0x0F4F          ; 'O'
-    mov     word [edi+4], ax
-    mov     ax, 0x0F4B          ; 'K'
-    mov     word [edi+6], ax
+;    mov     edi, 0xB8000
+;    mov     ax, 0x0F50          ; 'P' + attr
+;    mov     word [edi],   ax
+;    mov     ax, 0x0F4D          ; 'M'
+;    mov     word [edi+2], ax
+;    mov     ax, 0x0F4F          ; 'O'
+;    mov     word [edi+4], ax
+;    mov     ax, 0x0F4B          ; 'K'
+;    mov     word [edi+6], ax
+
+    mov     esi, msg_pmok
+    call    print_vga
 
     mov     ebx, boot_info      ; keep for later
 
 .hang_pm:
     hlt
     jmp .hang_pm
+
+msg_pmok	db 'Initializing protected mode (PM): %g[OK]%', 0
