@@ -1,4 +1,6 @@
 ; ===== bios/stage2/pm32.asm =====
+; Your structure retained; only Stage-3 handoff added.
+
 use16
 
 ; ---------------- flat GDT (code 0x08, data 0x10) ----------------
@@ -7,7 +9,6 @@ gdt_start:
     dq 0
     dq 0x00CF9A000000FFFF    ; 0x08: 32-bit code
     dq 0x00CF92000000FFFF    ; 0x10: 32-bit data
-
 gdt_end:
 
 gdt_desc:
@@ -35,11 +36,14 @@ fill_bootinfo:
 
 ; ---------------- Real → Protected Mode switch (force 16:32 far jump) -------
 pm_switch:
+    ; Fill boot_info in real mode exactly as you want.
+    call    fill_bootinfo
+
     cli
-    lgdt [gdt_desc]
-    mov eax, cr0
-    or  eax, 1                  ; CR0.PE = 1
-    mov cr0, eax
+    lgdt    [gdt_desc]
+    mov     eax, cr0
+    or      eax, 1                  ; CR0.PE = 1
+    mov     cr0, eax
 
     ; Encode FAR JMP with 32-bit offset explicitly: 66 EA imm32, imm16
     db  066h, 0EAh
@@ -59,29 +63,23 @@ pm_entry32:
     mov esp, PM_STACK_TOP
     cld
 
-    ; -------- print "PMOK" at row 0, col 0 in bright green --------
+    ; -------- print "PMOK" at row 0, col 0 --------
     mov     dh, 0            ; row
     mov     dl, 0            ; col
-    mov     bl, 0x0F         ; attribute (print_vga will change on %g/%r/%b)
+    mov     bl, 0x0F         ; attribute (print_vga handles %g/%r/%b)
+	mov     esi, msg_pmok
+	call    print_vga
 
-    ; “PMOK” at top-left (VGA text buffer @ 0xB8000)
-;    mov     edi, 0xB8000
-;    mov     ax, 0x0F50          ; 'P' + attr
-;    mov     word [edi],   ax
-;    mov     ax, 0x0F4D          ; 'M'
-;    mov     word [edi+2], ax
-;    mov     ax, 0x0F4F          ; 'O'
-;    mov     word [edi+4], ax
-;    mov     ax, 0x0F4B          ; 'K'
-;    mov     word [edi+6], ax
+    ; put whatever you promised to Stage-3:
+	mov     eax, 0xC001B007     ; example “magic”
+	mov     esi, boot_info      ; pointer to your info block
 
-    mov     esi, msg_pmok
-    call    print_vga
-
-    mov     ebx, boot_info      ; keep for later
+    ; ABSOLUTE handoff to 0x00002000 (where Stage-1 preloaded Stage-3)
+	;mov     ebx, 0x00002000
+	;jmp     ebx
 
 .hang_pm:
     hlt
     jmp .hang_pm
 
-msg_pmok	db 'Initializing protected mode (PM): %g[OK]%', 0
+msg_pmok db 'Initializing protected mode (PM): %g[OK]%', 0

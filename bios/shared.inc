@@ -1,5 +1,16 @@
 
-; ===== stage1/mbr.inc =====
+
+; ===== shared.inc =====
+
+use16
+
+align 16
+DAP:
+    db 16, 0
+	DAP_COUNT   dw 0
+	DAP_OFF     dw 0
+	DAP_SEG     dw 0
+	DAP_LBA     dq 0
 
 ; Compile-time assert (no runtime bytes)
 macro ASSERT cond, msg&
@@ -38,3 +49,7 @@ macro MAKE_DAP name, count, seg, ofs, lba
     dw seg
     dq lba
 }
+
+
+; ---- data ----
+BootDrive		db 0
