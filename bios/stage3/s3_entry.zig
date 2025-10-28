@@ -1,48 +1,37 @@
-// bios/stage3/s3_entry.zig
+const VGA = @as(*volatile [80 * 25]u16, @ptrFromInt(0xB8000));
 
-const StackTrace = extern struct {}; // minimal stub so we can define panic()
-
-const VGA = struct {
-    pub fn put(row: u8, col: u8, ch: u8, attr: u8) void {
-        const buf: [*]volatile u16 = @ptrFromInt(0xB8000);
-        const idx =
-            @as(usize, @intCast(row)) * 80 +
-            @as(usize, @intCast(col));
-        buf[idx] = (@as(u16, attr) << 8) | ch;
-    }
-};
-
-fn hang() noreturn {
-    while (true) {
-        asm volatile ("hlt");
-    }
+fn vga_clear(attr: u8) void {
+	var i: usize = 0;
+	while (i < 80 * 25) : (i += 1) {
+		// high byte = attr, low byte = ' '
+		VGA[i] = (@as(u16, attr) << 8) | ' ';
+	}
 }
 
-// Entry point (matches linker.ld ENTRY(_start))
-export fn _start() noreturn {
-    // Clear first line
-    var i: u8 = 0;
-    while (i < 80) : (i += 1) VGA.put(0, i, ' ', 0x0F);
-
-    // "ZIG3 OK"
-    VGA.put(0, 0, 'Z', 0x0F);
-    VGA.put(0, 1, 'I', 0x0F);
-    VGA.put(0, 2, 'G', 0x0F);
-    VGA.put(0, 3, '3', 0x0F);
-    VGA.put(0, 5, 'O', 0x0A);
-    VGA.put(0, 6, 'K', 0x0A);
-
-    hang();
+fn vga_print(msg: []const u8, row: u8, col: u8, attr: u8) void {
+	var i: usize = 0;
+	var pos: usize = (@as(usize, row) * 80 + @as(usize, col));
+	while (i < msg.len and pos < 80 * 25) : ({
+		i += 1;
+		pos += 1;
+	}) {
+		const ch: u8 = msg[i];
+		VGA[pos] = (@as(u16, attr) << 8) | ch;
+	}
 }
 
-// Minimal panic stub for freestanding (avoid pulling in std)
-pub fn panic(
-    msg: []const u8,
-    trace: ?*StackTrace,
-    ret_addr: ?usize,
-) noreturn {
-    _ = msg;
-    _ = trace;
-    _ = ret_addr;
-    hang();
+pub export fn _start() linksection(".text.start") callconv(.C) noreturn {
+	// We're already in 32-bit protected mode, with a valid stack (ESP set by stage2).
+	// Segments must already be flat, paging off.
+
+	// clear to gray-on-black
+	vga_clear(0x07);
+
+	// print in bright white
+	vga_print("hello from zig stage3", 0, 0, 0x0F);
+
+	// hang forever (hlt in a loop)
+	while (true) {
+		asm volatile ("hlt");
+	}
 }

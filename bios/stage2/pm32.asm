@@ -75,8 +75,8 @@ pm_entry32:
 	mov     esi, boot_info      ; pointer to your info block
 
     ; ABSOLUTE handoff to 0x00002000 (where Stage-1 preloaded Stage-3)
-	;mov     ebx, 0x00002000
-	;jmp     ebx
+	mov     ebx, 0x00002000
+	jmp     ebx
 
 .hang_pm:
     hlt

@@ -2,9 +2,6 @@
 /* Zig Stage-3: 32-bit, physical load = 0x0010_0000, no paging. */
 ENTRY			(_start)
 
-OUTPUT_FORMAT	(elf32-i386)
-OUTPUT_ARCH		(i386)
-
 SECTIONS
 {
   . = 0x00002000;

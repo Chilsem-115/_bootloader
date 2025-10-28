@@ -5,7 +5,7 @@ QEMU        ?= qemu-system-i386
 ZIG         ?= zig
 OBJCOPY     ?= objcopy
 ZIG_TARGET  ?= x86-freestanding
-ZIG_OFLAGS  ?= -O ReleaseSmall -fstrip -fno-PIE -fno-PIC
+ZIG_OFLAGS  ?= -O ReleaseSmall -fstrip -fno-stack-protector -fno-PIE -fno-PIC
 
 # ==================== build dirs / outputs ====================
 BUILD_BIOS  := build/bios
@@ -82,18 +82,16 @@ $(ST3_BIN): $(ST3_ELF) | $(BUILD_ST3)
 ST2_TMP := $(BUILD_BIOS)/stage2.tmp.bin
 
 $(ST2_BIN): $(ST2_SRC) $(ST2_PARTS) $(ST3_BIN) | $(BUILD_BIOS)
-	@echo "[stage2 pass1] assembling stage2.tmp.bin"; \
-	$(FASM) $(ST2_SRC) $(ST2_TMP); \
+	@set -euo pipefail; \
+	echo "[stage2 pass1] assembling stage2.tmp.bin"; \
+	$(FASM) -d STAGE3_LBA=0 -d STAGE3_SECTORS=0 $(ST2_SRC) $(ST2_TMP); \
 	\
-	S2_SIZE=$$(stat -c%s $(ST2_TMP) 2>/dev/null || stat -f%z $(ST2_TMP)); \
-	S3_SIZE=$$(stat -c%s $(ST3_BIN) 2>/dev/null || stat -f%z $(ST3_BIN)); \
-	\
-	S2_SECT=$$(( ( $$S2_SIZE + 511 ) / 512 )); \
-	S3_SECT=$$(( ( $$S3_SIZE + 511 ) / 512 )); \
-	\
+	S2_SIZE=$$(wc -c < $(ST2_TMP)); \
+	S3_SIZE=$$(wc -c < $(ST3_BIN)); \
+	S2_SECT=$$(( (S2_SIZE + 511) / 512 )); \
+	S3_SECT=$$(( (S3_SIZE + 511) / 512 )); \
 	S2_LBA=1; \
-	S3_LBA=$$(( $$S2_LBA + $$S2_SECT )); \
-	\
+	S3_LBA=$$(( S2_LBA + S2_SECT )); \
 	echo "stage2.tmp.bin: $$S2_SIZE bytes => $$S2_SECT sectors @ LBA $$S2_LBA"; \
 	echo "stage3.bin:     $$S3_SIZE bytes => $$S3_SECT sectors @ LBA $$S3_LBA"; \
 	\
@@ -142,7 +140,7 @@ bios-image: bios
 	dd if=$(ST3_BIN) of=$(IMG) bs=512 seek=$$S3_LBA conv=notrunc status=none
 
 bios-run: bios-image
-	$(QEMU) -drive file=$(IMG),format=raw,if=ide -boot c
+	$(QEMU) -drive file=$(IMG),format=raw,if=ide -boot c -monitor stdio
 
 # ==================== clean / rebuild ====================
 bios-clean:
