@@ -63,13 +63,6 @@ pm_entry32:
     mov esp, PM_STACK_TOP
     cld
 
-    ; -------- print "PMOK" at row 0, col 0 --------
-    mov     dh, 0            ; row
-    mov     dl, 0            ; col
-    mov     bl, 0x0F         ; attribute (print_vga handles %g/%r/%b)
-	mov     esi, msg_pmok
-	call    print_vga
-
     ; put whatever you promised to Stage-3:
 	mov     eax, 0xC001B007     ; example “magic”
 	mov     esi, boot_info      ; pointer to your info block

@@ -28,7 +28,8 @@ pub export fn _start() linksection(".text.start") callconv(.C) noreturn {
 	vga_clear(0x07);
 
 	// print in bright white
-	vga_print("hello from zig stage3", 0, 0, 0x0F);
+	vga_print("hello from 32-bit protected mode", 0, 0, 0x0F);
+	vga_print("suka", 1, 0, 0x1D);
 
 	// hang forever (hlt in a loop)
 	while (true) {
