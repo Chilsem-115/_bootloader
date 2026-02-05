@@ -103,8 +103,10 @@ read_stage2_rest:
     mov   eax, LOAD_LIN + 512
 
     ; ECX = remaining sectors = total - 1
-    mov   cx,  word [LOAD_OFS + 4]    ; low 16 of ST2_TOTAL_SECT
-    mov   bx,  word [LOAD_OFS + 6]    ; high 16 if you ever go >65535 sectors
+    ; Header layout (dwords):
+    ;   +0 magic, +4 bytes, +8 sectors, +12 entry_ofs, +16 version
+    mov   cx,  word [LOAD_OFS + 8]    ; low 16 of ST2_TOTAL_SECT
+    mov   bx,  word [LOAD_OFS + 10]   ; high 16 if you ever go >65535 sectors
     dec   cx
     jz    .done
 

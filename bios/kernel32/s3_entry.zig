@@ -1,4 +1,18 @@
+
 const VGA = @as(*volatile [80 * 25]u16, @ptrFromInt(0xB8000));
+
+// Provided by linker.ld so we can zero .bss ourselves (objcopy strips it).
+extern var __bss_start: u8;
+extern var __bss_end: u8;
+
+fn bss_clear() void {
+    const start = @intFromPtr(&__bss_start);
+    const end = @intFromPtr(&__bss_end);
+    var p: usize = start;
+    while (p < end) : (p += 1) {
+        @as(*volatile u8, @ptrFromInt(p)).* = 0;
+    }
+}
 
 fn vga_clear(attr: u8) void {
 	var i: usize = 0;
@@ -20,16 +34,20 @@ fn vga_print(msg: []const u8, row: u8, col: u8, attr: u8) void {
 	}
 }
 
-pub export fn _start() linksection(".text.start") callconv(.C) noreturn {
+pub export fn _start() linksection(".text.start") callconv(.c) noreturn {
 	// We're already in 32-bit protected mode, with a valid stack (ESP set by stage2).
 	// Segments must already be flat, paging off.
 
 	// clear to gray-on-black
 	vga_clear(0x07);
 
+	// zero .bss so Zig globals stay predictable
+	bss_clear();
+
 	// print in bright white
 	vga_print("hello from 32-bit protected mode", 0, 0, 0x0F);
-	vga_print("suka", 1, 0, 0x1D);
+	vga_print("stage3 up; waiting for next stage", 1, 0, 0x1E);
+	//vga_clear(0x07);
 
 	// hang forever (hlt in a loop)
 	while (true) {

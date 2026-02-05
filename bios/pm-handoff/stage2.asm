@@ -4,12 +4,17 @@ use16
 org     8000h                          ; Stage2 is loaded here by Stage1
 
 ; ---------------- Stage2 self-describing header (first 16 bytes) ------------
+; Keep header math in symbols so offsets stay obvious to Stage1.
+ST2_SIZE        = ST2_END - $$
+ST2_SECT        = (ST2_SIZE + 511) / 512
+ST2_ENTRY_OFS   = start - $$
+
 ST2_HDR:
     db  'ST2H'                         ; magic
-    ST2_TOTAL_BYTES dd  ST2_END - $$       ; exact assembler size
-    ST2_TOTAL_SECT  dd  (ST2_TOTAL_BYTES+511)/512
-    ST_ENTRY_OFS    dd  start - $$         ; entry offset from start of image
-    ST2_VERSION     dd  0x00010000         ; v1.0
+    ST2_TOTAL_BYTES dd  ST2_SIZE       ; exact assembler size
+    ST2_TOTAL_SECT  dd  ST2_SECT       ; size in 512-byte sectors
+    ST_ENTRY_OFS    dd  ST2_ENTRY_OFS  ; entry offset from start of image
+    ST2_VERSION     dd  0x00010000     ; v1.0
 
 ; ---------------- includes / config -----------------------------------------
 include 'config.inc'                   ; constants + print macros

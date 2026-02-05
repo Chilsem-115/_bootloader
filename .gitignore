@@ -1,0 +1,5 @@
+build/
+*.img
+zig-out/
+.zig-cache/
+bios/stage3/.zig-cache/
