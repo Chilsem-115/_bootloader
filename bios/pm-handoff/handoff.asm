@@ -1,27 +1,27 @@
-; ===== bios/stage2/stage2.asm =====
+; ===== bios/pm-handoff/handoff.asm =====
 format  binary
 use16
-org     8000h                          ; Stage2 is loaded here by Stage1
+org     8000h                          ; Handoff loader is loaded here by the MBR
 
-; ---------------- Stage2 self-describing header (first 16 bytes) ------------
-; Keep header math in symbols so offsets stay obvious to Stage1.
-ST2_SIZE        = ST2_END - $$
-ST2_SECT        = (ST2_SIZE + 511) / 512
-ST2_ENTRY_OFS   = start - $$
+; ---------------- Handoff self-describing header (first 16 bytes) -----------
+; Keep header math in symbols so offsets stay obvious to the MBR.
+HANDOFF_SIZE        = HANDOFF_END - $$
+HANDOFF_SECTORS     = (HANDOFF_SIZE + 511) / 512
+HANDOFF_ENTRY_OFS   = start - $$
 
-ST2_HDR:
-    db  'ST2H'                         ; magic
-    ST2_TOTAL_BYTES dd  ST2_SIZE       ; exact assembler size
-    ST2_TOTAL_SECT  dd  ST2_SECT       ; size in 512-byte sectors
-    ST_ENTRY_OFS    dd  ST2_ENTRY_OFS  ; entry offset from start of image
-    ST2_VERSION     dd  0x00010000     ; v1.0
+HANDOFF_HDR:
+    db  'HND2'                             ; magic
+    HANDOFF_TOTAL_BYTES dd  HANDOFF_SIZE   ; exact assembler size
+    HANDOFF_TOTAL_SECT dd  HANDOFF_SECTORS ; size in 512-byte sectors
+    HANDOFF_ENTRY_PTR  dd  HANDOFF_ENTRY_OFS
+    HANDOFF_VERSION    dd  0x00010000      ; v1.0
 
 ; ---------------- includes / config -----------------------------------------
 include 'config.inc'                   ; constants + print macros
 include '../shared.inc'
 include 'a20.asm'
 include 'e820.asm'
-include 'load_s3.asm'
+include 'load_checkup.asm'
 
 ; ---------------- real-mode entry -------------------------------------------
 
@@ -40,8 +40,8 @@ start:
 
 	mov	[BootDrive], dl
 
-	; load stage3 binary into 0x00002000
-	call load_stage3
+	; load the checkup payload into 0x00002000
+	call load_checkup
 	jc	disk_fail
 
 	; set 80x25 text mode / clear screen
@@ -76,7 +76,7 @@ start:
 	hlt
 	jmp .hang_rm
 
-; ---- disk read failure hang (load_stage3 jc here) ----
+; ---- disk read failure hang (load_checkup jc here) ----
 disk_fail:
 	cli
 
@@ -85,7 +85,7 @@ disk_fail:
 	jmp .hang
 
 ; ---------------- end-of-image marker for header size ------------------------
-ST2_END:
+HANDOFF_END:
 
 include 'print_vga.asm'
 include 'pm32.asm'                     ; pm_switch + pm_entry32

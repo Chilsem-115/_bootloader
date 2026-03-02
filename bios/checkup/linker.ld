@@ -1,5 +1,5 @@
 
-/* Zig Stage-3: 32-bit, physical load = 0x0010_0000, no paging. */
+/* Zig : 32-bit, physical load = 0x0010_0000, no paging. */
 ENTRY			(_start)
 
 SECTIONS

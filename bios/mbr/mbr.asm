@@ -1,15 +1,14 @@
-; ===== stage1/mbr.asm (FASM) =====
+; ===== mbr.asm =====
 format  binary
 use16
 org     7C00h
 
 ; ---- layout ----
 LOAD_SEG        = 0000h
-LOAD_OFS        = 8000h          ; Stage2 entry at 0000:8000
+LOAD_OFS        = 8000h          ; handoff entry at 0000:8000
 LOAD_LIN        = (LOAD_SEG shl 4) + LOAD_OFS
 
 USE_CLEAR_SCREEN = 1
-
 
 include '../shared.inc'
 ;include 'load_s3.asm'
@@ -36,31 +35,30 @@ start:
 		int 10h
 	end if
 
-    ; ---- read Stage2 header (LBA STAGE2_LBA -> 0000:8000) ----
-    call read_stage2_header
+    ; ---- read the handoff header (LBA HANDOFF_LBA -> 0000:8000) ----
+    call read_handoff_header
 
-    ; ---- read the rest of Stage2 after the first sector ----
-    call read_stage2_rest
+    ; ---- read the rest of the handoff image after the first sector ----
+    call read_handoff_rest
 
-	; ---- read stage3 entirely (LBA STAGE3_LBA -> 0000:2000) ----
-	;call load_stage3
+	; ---- the handoff loader will read the checkup payload at runtime ----
 
-    ; ---- jump into Stage2 ----
+    ; ---- jump into the handoff loader ----
     xor ax, ax
-    mov ds, ax                 ; DS = 0000 to read Stage2 header words at 0000:8000
+    mov ds, ax                 ; DS = 0000 to read handoff header words at 0000:8000
 
-    mov bx, [LOAD_OFS + 12]    ; ST_ENTRY_OFS (low16)
+    mov bx, [LOAD_OFS + 12]    ; HANDOFF_ENTRY (low16)
     add bx, LOAD_OFS           ; BX = 0x8000 + entry_ofs -> final IP
 
     push LOAD_SEG              ; target CS = 0000
     push bx                    ; target IP = BX
-    retf                       ; far jump into Stage2
+    retf                       ; far jump into the handoff loader
 
 
 ; ---------------------- INT 13h Extensions (AH=42h) helpers ----------------------
 
 ; Read first sector (header) into 0000:8000
-read_stage2_header:
+read_handoff_header:
 	push ds
 	push si
 
@@ -68,7 +66,7 @@ read_stage2_header:
 	mov  word  [DAP_COUNT], 1
 	mov  word  [DAP_OFF],   LOAD_OFS
 	mov  word  [DAP_SEG],   LOAD_SEG
-	mov  dword [DAP_LBA],   STAGE2_LBA
+	mov  dword [DAP_LBA],   HANDOFF_LBA
 	mov  dword [DAP_LBA+4], 0
 
 	; DS:SI -> DAP
@@ -88,8 +86,8 @@ read_stage2_header:
 	ret
 
 
-; Read remaining sectors of Stage2 into memory after the first 512 bytes
-read_stage2_rest:
+; Read remaining sectors of the handoff image into memory after the first 512 bytes
+read_handoff_rest:
     push ds
     push si
     push ax
@@ -105,13 +103,13 @@ read_stage2_rest:
     ; ECX = remaining sectors = total - 1
     ; Header layout (dwords):
     ;   +0 magic, +4 bytes, +8 sectors, +12 entry_ofs, +16 version
-    mov   cx,  word [LOAD_OFS + 8]    ; low 16 of ST2_TOTAL_SECT
+    mov   cx,  word [LOAD_OFS + 8]    ; low 16 of HANDOFF_TOTAL_SECT
     mov   bx,  word [LOAD_OFS + 10]   ; high 16 if you ever go >65535 sectors
     dec   cx
     jz    .done
 
-    ; EDI = current LBA (start at second sector of Stage2)
-    mov   edi, STAGE2_LBA + 1
+    ; EDI = current LBA (start at second sector of the handoff image)
+    mov   edi, HANDOFF_LBA + 1
 
 .next:
     test  cx, cx

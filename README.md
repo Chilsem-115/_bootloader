@@ -1,25 +1,30 @@
 # 1337 Bootloader (BIOS path)
 
-Minimal multi-stage BIOS boot path with Zig stage3.
+Minimal BIOS boot path with an MBR, a protected-mode handoff loader, and a Zig checkup payload.
 
 ## Build
 Requires `fasm`, `zig`, `objcopy`, and `qemu-system-i386` on PATH.
 
 ```sh
-make bios
+zig build bios
 ```
 
 ## Run in QEMU
 ```sh
-make bios-run
+zig build bios-run
 ```
 
 ## Layout
-- Stage1 (MBR): loads Stage2 to `0000:8000`, jumps.
-- Stage2 (real mode): loads Stage3 to 0x00002000, collects E820, enables A20, switches to protected mode.
-- Stage3 (Zig): currently just clears screen and prints; zeroes `.bss` manually.
+- `bios/mbr`: loads the handoff image to `0000:8000`, then jumps.
+- `bios/pm-handoff`: BIOS real-mode handoff loader (INT13/E820/A20) that enters 32-bit protected mode.
+- `bios/checkup`: Zig checkup payload running in 32-bit protected mode (currently clears screen + prints; zeroes `.bss`).
 
 ## Cleaning
 ```sh
-make bios-clean
+zig build clean
+```
+
+## Help
+```sh
+zig build what
 ```

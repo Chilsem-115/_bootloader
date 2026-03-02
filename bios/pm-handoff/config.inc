@@ -1,4 +1,4 @@
-; ===== bios/stage2/config.inc =====
+; ===== bios/pm-handoff/config.inc =====
 
 ; ---- constants / selectors / buffers ----
 MEMMAP_BUF_SEG      = 2000h
@@ -77,4 +77,3 @@ macro PRINT_FAIL {
 
 ok_str   db ' [OK]',0
 fail_str db ' [FAIL]',0
-

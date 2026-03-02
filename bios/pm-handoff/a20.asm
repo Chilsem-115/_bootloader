@@ -1,4 +1,4 @@
-; ===== bios/stage2/a20.asm =====
+; ===== bios/pm-handoff/a20.asm =====
 use16
 
 KBD_STAT = 64h

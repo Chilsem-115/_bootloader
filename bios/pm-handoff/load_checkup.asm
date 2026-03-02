@@ -81,12 +81,12 @@ dbg_hex32_from_edi:
     ret
 
 ; --------------------------------------------------------------------
-; load_stage3:
-;   loads STAGE3_SECTORS sectors starting at STAGE3_LBA
+; load_checkup:
+;   loads CHECKUP_SECTORS sectors starting at CHECKUP_LBA
 ;   into physical 0x00002000
 ; --------------------------------------------------------------------
 
-load_stage3:
+load_checkup:
     ; save caller state
     push ds
     push si
@@ -100,28 +100,28 @@ load_stage3:
 
     ; ===========================
     ; DEBUG BLOCK 0:
-    ; print "S3LBA=" <STAGE3_LBA> " S3SEC=" <STAGE3_SECTORS>
+    ; print "CKLBA=" <CHECKUP_LBA> " CKSEC=" <CHECKUP_SECTORS>
     ; ===========================
 
     mov si, dbg_hdr
     PRINT_Z
 
-    ; print S3LBA=
+    ; print CKLBA=
     mov si, dbg_lba2
     PRINT_Z
 
-    mov edi, STAGE3_LBA        ; put STAGE3_LBA into EDI
+    mov edi, CHECKUP_LBA       ; put CHECKUP_LBA into EDI
     call dbg_hex32_from_edi    ; spits high16low16
 
     ; space
     mov al, ' '
     call dbg_putc
 
-    ; print S3SEC=
+    ; print CKSEC=
     mov si, dbg_sec2
     PRINT_Z
 
-    mov ax, STAGE3_SECTORS     ; 16-bit is fine
+    mov ax, CHECKUP_SECTORS    ; 16-bit is fine
     call dbg_hex16
 
     ; newline
@@ -135,13 +135,13 @@ load_stage3:
     ; ===========================
 
     ; destination linear address
-    mov     eax, 0x00002000        ; where stage3 should live
+    mov     eax, 0x00002000        ; where the checkup payload should live
 
     ; CX = remaining sectors
-    mov     cx,  STAGE3_SECTORS    ; <--- this is what we just printed
+    mov     cx,  CHECKUP_SECTORS   ; <--- this is what we just printed
 
     ; EDI = current LBA
-    mov     edi, STAGE3_LBA        ; <--- this too
+    mov     edi, CHECKUP_LBA       ; <--- this too
 
 .next_chunk:
     test    cx, cx
@@ -271,10 +271,10 @@ load_stage3:
     ret
 
 ; --- debug strings for PRINT_Z ---
-dbg_enter  db '[ENTER_LOAD3]',13,10,0
-dbg_hdr    db '[S3 DEBUG]',0
-dbg_lba2   db 'S3LBA=',0
-dbg_sec2   db 'S3SEC=',0
+dbg_enter  db '[ENTER_CHECKUP_LOAD]',13,10,0
+dbg_hdr    db '[CHECKUP DEBUG]',0
+dbg_lba2   db 'CKLBA=',0
+dbg_sec2   db 'CKSEC=',0
 
 dbg_before db '[B]',13,10,0
 dbg_after  db '[A]',13,10,0

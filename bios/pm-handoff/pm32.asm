@@ -1,5 +1,5 @@
-; ===== bios/stage2/pm32.asm =====
-; Your structure retained; only Stage-3 handoff added.
+; ===== bios/pm-handoff/pm32.asm =====
+; Protected-mode switch and handoff to the checkup payload.
 
 use16
 
@@ -63,11 +63,11 @@ pm_entry32:
     mov esp, PM_STACK_TOP
     cld
 
-    ; put whatever you promised to Stage-3:
+    ; put whatever you want to pass to the checkup payload:
 	mov     eax, 0xC001B007     ; example “magic”
 	mov     esi, boot_info      ; pointer to your info block
 
-    ; ABSOLUTE handoff to 0x00002000 (where Stage-1 preloaded Stage-3)
+    ; ABSOLUTE jump to 0x00002000 where the handoff loader placed the checkup payload
 	mov     ebx, 0x00002000
 	jmp     ebx
 

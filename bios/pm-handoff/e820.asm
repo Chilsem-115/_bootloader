@@ -1,4 +1,4 @@
-; ===== bios/stage2/e820.asm =====
+; ===== bios/pm-handoff/e820.asm =====
 use16
 
 ; expects in config/data (defined ONCE):

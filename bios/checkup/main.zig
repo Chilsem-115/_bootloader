@@ -35,7 +35,7 @@ fn vga_print(msg: []const u8, row: u8, col: u8, attr: u8) void {
 }
 
 pub export fn _start() linksection(".text.start") callconv(.c) noreturn {
-	// We're already in 32-bit protected mode, with a valid stack (ESP set by stage2).
+	// We're already in 32-bit protected mode, with a valid stack (ESP set by the handoff loader).
 	// Segments must already be flat, paging off.
 
 	// clear to gray-on-black
@@ -46,7 +46,7 @@ pub export fn _start() linksection(".text.start") callconv(.c) noreturn {
 
 	// print in bright white
 	vga_print("hello from 32-bit protected mode", 0, 0, 0x0F);
-	vga_print("stage3 up; waiting for next stage", 1, 0, 0x1E);
+	vga_print("checkup payload active", 1, 0, 0x1E);
 	//vga_clear(0x07);
 
 	// hang forever (hlt in a loop)
