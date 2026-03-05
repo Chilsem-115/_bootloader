@@ -46,7 +46,8 @@ pub export fn _start() linksection(".text.start") callconv(.c) noreturn {
 
 	// print in bright white
 	vga_print("hello from 32-bit protected mode", 0, 0, 0x0F);
-	vga_print("checkup payload active", 1, 0, 0x1E);
+	vga_print("checkup payload active", 1, 0, 0x0E);
+	vga_print("cpu check in progress...", 1, 0, 0x0E);
 	//vga_clear(0x07);
 
 	// hang forever (hlt in a loop)
