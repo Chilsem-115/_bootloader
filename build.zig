@@ -20,7 +20,7 @@ pub fn build(b: *std.Build) void {
 	const long_mode_bin = build_long_mode_dir ++ "/long_mode.bin";
 	const disk_img = build_bios_dir ++ "/disk.img";
 
-	const zig_target = b.option([]const u8, "zig-target", "Zig target triple") orelse "x86-freestanding";
+	const zig_target = b.option([]const u8, "zig-target", "Zig target triple") orelse "x86_64-freestanding";
 	const zig_oflags = b.option([]const u8, "zig-oflags", "Extra Zig flags") orelse "-O ReleaseSmall -fstrip -fno-stack-protector -fno-PIE -fno-PIC";
 
 	const bios = b.step("bios", "Build BIOS artifacts (mbr + handoff loader + long-mode stage payload)");
@@ -45,7 +45,7 @@ pub fn build(b: *std.Build) void {
 	mk_long_mode_bin.setCwd(b.path("."));
 	mk_long_mode_bin.step.dependOn(&mk_long_mode.step);
 	mk_long_mode_bin.addArg(b.fmt(
-		\\{s} -O binary {s} {s}
+		\\{s} -O binary -j .text -j .rodata -j .data {s} {s}
 		\\
 	, .{ objcopy, long_mode_elf, long_mode_bin }));
 
@@ -56,7 +56,7 @@ pub fn build(b: *std.Build) void {
 	mk_handoff.addArg(b.fmt(
 		\\mkdir -p {s}
 		\\echo "[handoff pass1] assembling {s}"
-		\\{s} -d CHECKUP_LBA=0 -d CHECKUP_SECTORS=0 bios/pm-handoff/handoff.asm {s}
+		\\{s} -d CHECKUP_LBA=0 -d CHECKUP_SECTORS=0 bios/handoff/handoff.asm {s}
 		\\
 		\\HANDOFF_SIZE=$(wc -c < {s})
 		\\CHECKUP_SIZE=$(wc -c < {s})
@@ -68,7 +68,7 @@ pub fn build(b: *std.Build) void {
 		\\echo "long_mode.bin:   $CHECKUP_SIZE bytes => $CHECKUP_SECT sectors @ LBA $CHECKUP_LBA"
 		\\
 		\\echo "[handoff pass2] assembling FINAL {s}"
-		\\{s} -d CHECKUP_LBA=$CHECKUP_LBA -d CHECKUP_SECTORS=$CHECKUP_SECT bios/pm-handoff/handoff.asm {s}
+		\\{s} -d CHECKUP_LBA=$CHECKUP_LBA -d CHECKUP_SECTORS=$CHECKUP_SECT bios/handoff/handoff.asm {s}
 		\\
 	, .{ build_bios_dir, handoff_tmp_bin, fasm, handoff_tmp_bin, handoff_tmp_bin, long_mode_bin, handoff_bin, fasm, handoff_bin }));
 

@@ -16,8 +16,8 @@ zig build bios-run
 
 ## Layout
 - `bios/mbr`: loads the handoff image to `0000:8000`, then jumps.
-- `bios/pm-handoff`: BIOS real-mode handoff loader (INT13/E820/A20) that enters 32-bit protected mode.
-- `bios/long_mode`: Zig long-mode stage running in 32-bit protected mode (CPUID checks + PAE enable path).
+- `bios/handoff`: BIOS handoff loader that enters protected mode, enables IA-32e long mode, and jumps to 64-bit payload.
+- `bios/long_mode`: Zig payload running in 64-bit long mode (framebuffer rendering demo).
 
 ## Cleaning
 ```sh

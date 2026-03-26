@@ -1,4 +1,4 @@
-; ===== bios/pm-handoff/handoff.asm =====
+; ===== bios/handoff/handoff.asm =====
 format  binary
 use16
 org     8000h                          ; Handoff loader is loaded here by the MBR
@@ -10,18 +10,18 @@ HANDOFF_SECTORS     = (HANDOFF_SIZE + 511) / 512
 HANDOFF_ENTRY_OFS   = start - $$
 
 HANDOFF_HDR:
-    db  'HND2'                             ; magic
-    HANDOFF_TOTAL_BYTES dd  HANDOFF_SIZE   ; exact assembler size
-    HANDOFF_TOTAL_SECT dd  HANDOFF_SECTORS ; size in 512-byte sectors
-    HANDOFF_ENTRY_PTR  dd  HANDOFF_ENTRY_OFS
-    HANDOFF_VERSION    dd  0x00010000      ; v1.0
+	db  'HND2'                             ; magic
+	HANDOFF_TOTAL_BYTES dd  HANDOFF_SIZE   ; exact assembler size
+	HANDOFF_TOTAL_SECT dd  HANDOFF_SECTORS ; size in 512-byte sectors
+	HANDOFF_ENTRY_PTR  dd  HANDOFF_ENTRY_OFS
+	HANDOFF_VERSION    dd  0x00010000      ; v1.0
 
 ; ---------------- includes / config -----------------------------------------
 include 'config.inc'                   ; constants + print macros
 include '../shared.inc'
 include 'a20.asm'
 include 'e820.asm'
-include 'load_checkup.asm'
+include 'load_payload.asm'
 
 ; ---------------- real-mode entry -------------------------------------------
 
@@ -40,14 +40,9 @@ start:
 
 	mov	[BootDrive], dl
 
-	; load the checkup payload into 0x00002000
-	call load_checkup
+	; load the long-mode stage payload into 0x00020000
+	call load_payload
 	jc	disk_fail
-
-	; set 80x25 text mode / clear screen
-	mov  ax, 0x0003
-	int  0x10
-	xor  ax, ax          ; AL=0 so stray teletype won't print junk
 
 	; enable A20
 	call enable_a20
@@ -66,6 +61,16 @@ start:
 	mov [boot_info+0], dl
 	call fill_bootinfo
 
+	; force classic VGA text mode (80x25 color text), no framebuffer metadata
+	mov  ax, 0x0003
+	int  0x10
+	and  byte [boot_flags], 0xFE
+	mov  word [fb_width], 0
+	mov  word [fb_height], 0
+	mov  word [fb_pitch], 0
+	mov  byte [fb_bpp], 0
+	mov  dword [fb_addr], 0
+
 	; switch to Protected Mode and never come back
 	call pm_switch
 
@@ -76,7 +81,7 @@ start:
 	hlt
 	jmp .hang_rm
 
-; ---- disk read failure hang (load_checkup jc here) ----
+; ---- disk read failure hang (load_payload jc here) ----
 disk_fail:
 	cli
 
@@ -88,4 +93,4 @@ disk_fail:
 HANDOFF_END:
 
 include 'print_vga.asm'
-include 'pm32.asm'                     ; pm_switch + pm_entry32
+include 'mode_switch.asm'              ; pm_switch + long-mode entry

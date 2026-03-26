@@ -1,14 +1,17 @@
-; ===== bios/pm-handoff/config.inc =====
+; ===== bios/handoff/config.inc =====
 
 ; ---- constants / selectors / buffers ----
-MEMMAP_BUF_SEG      = 2000h
+MEMMAP_BUF_SEG      = 3000h
 MEMMAP_BUF_OFS      = 0000h
 MEMMAP_MAX_ENTRIES  = 32
 
-PM_STACK_TOP        = 0x00200000
+; Keep PM/LM stack above page-table scratch region [0x00100000, 0x00906000).
+PM_STACK_TOP        = 0x01000000
 
 CODE_SEL            = 0x08
 DATA_SEL            = 0x10
+LONG_CODE_SEL       = 0x18
+LONG_DATA_SEL       = 0x20
 
 ; ---- strings ----
 

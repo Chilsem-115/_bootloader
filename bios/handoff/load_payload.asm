@@ -81,12 +81,12 @@ dbg_hex32_from_edi:
     ret
 
 ; --------------------------------------------------------------------
-; load_checkup:
+; load_payload:
 ;   loads CHECKUP_SECTORS sectors starting at CHECKUP_LBA
-;   into physical 0x00002000
+;   into physical 0x00020000
 ; --------------------------------------------------------------------
 
-load_checkup:
+load_payload:
     ; save caller state
     push ds
     push si
@@ -135,7 +135,7 @@ load_checkup:
     ; ===========================
 
     ; destination linear address
-    mov     eax, 0x00002000        ; where the checkup payload should live
+    mov     eax, 0x00020000        ; where the long-mode stage should live
 
     ; CX = remaining sectors
     mov     cx,  CHECKUP_SECTORS   ; <--- this is what we just printed

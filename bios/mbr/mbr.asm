@@ -41,7 +41,7 @@ start:
     ; ---- read the rest of the handoff image after the first sector ----
     call read_handoff_rest
 
-	; ---- the handoff loader will read the checkup payload at runtime ----
+	; ---- the handoff loader will read the long-mode payload at runtime ----
 
     ; ---- jump into the handoff loader ----
     xor ax, ax
